@@ -7,8 +7,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using PasteIntoFile.Properties;
+using SmartFormat;
+using SmartFormat.Core.Parsing;
 using WK.Libraries.BetterFolderBrowserNS;
 using WK.Libraries.SharpClipboardNS;
+using SmartFormat.Core.Formatting;
 
 namespace PasteIntoFile {
     public sealed partial class Dialog : MasterForm {
@@ -181,7 +184,16 @@ namespace PasteIntoFile {
         }
 
         public static string formatFilenameTemplate(string template, DateTime timestamp, int count) {
-            return String.Format(template, timestamp, count);
+            var smart = new SmartFormatter();
+            smart.AddExtensions(new DefaultSource());
+            smart.AddExtensions(new ReflectionSource());
+            smart.AddExtensions(new DefaultFormatter());
+
+            try {
+                return smart.Format(template, timestamp, count);
+            } catch (Exception ex) when (ex is ParsingErrors or FormattingException) {
+                return String.Format(template, timestamp, count);
+            }
         }
         public string formatFilenameTemplate(string template) {
             return formatFilenameTemplate(template, clipData.Timestamp, saveCount);
